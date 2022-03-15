@@ -1,0 +1,22 @@
+{
+    "name": "equmedia-platform",
+    "version": "0.0.1",
+    "description": "Equmedia platform consisting of an api gateway and microservices",
+    "scripts": {
+      "install": "./scripts/install.sh",
+      "build": "./scripts/build.sh",
+      "docker:build": "docker-compose build",
+      "docker:start": "docker-compose up",
+      "docker:teardown": "docker-compose down",
+      "start": "npm run install && npm run lint && npm run build && npm run docker:build && npm run docker:start"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git@github.com:pixeliner/equmedia-platform.git"
+    },
+    "author": "Peter Vercauteren <peter@pixeliner.com> (https://github.com/pixeliner)",
+    "bugs": {
+      "url": "https://github.com/pixeliner/equmedia-platform/issues"
+    },
+    "homepage": "https://github.com/pixeliner"
+  }

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: equmedia-api-nginx
+  name: equmedia-api-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: equmedia-api-nginx
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend: "true"
+        io.kompose.service: equmedia-api-nginx
+    spec:
+      containers:
+        - image: nginx:alpine
+          name: equmedia-api-nginx
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d/
+              name: equmedia-api-nginx-claim0
+            - mountPath: /etc/ssl/public-cert.crt
+              name: equmedia-api-nginx-claim1
+            - mountPath: /etc/ssl/private-key.key
+              name: equmedia-api-nginx-claim2
+      restartPolicy: Always
+      volumes:
+        - name: equmedia-api-nginx-claim0
+          persistentVolumeClaim:
+            claimName: equmedia-api-nginx-claim0
+        - name: equmedia-api-nginx-claim1
+          persistentVolumeClaim:
+            claimName: equmedia-api-nginx-claim1
+        - name: equmedia-api-nginx-claim2
+          persistentVolumeClaim:
+            claimName: equmedia-api-nginx-claim2
+status: {}

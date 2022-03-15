@@ -1,0 +1,190 @@
+version: "3.7"
+
+services:
+  equmedia-api:
+    image: "equmedia-api:dev"
+    container_name: "equmedia-api"
+    build:
+      context: "./api-gateway/equmedia-api"
+    networks:
+      - "backend"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - "equmedia-api-rabbitmq"
+      - "equmedia-api-redis"
+      - "equmedia-auth"
+      - "equmedia-mail"
+    environment: 
+      REDIS_HOST: equmedia-api-redis
+      RABBITMQ_FIRST_HOST_PORT: 5672
+      RABBITMQ_NODENAME: "equmedia-api-rabbitmq"
+      ENVIRONMENT: ${ENVIRONMENT}
+      CORE_URL: ${CORE_URL}
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CACHE_TTL_IN_SECONDS: ${CACHE_TTL_IN_SECONDS}
+      CACHE_MAX_ITEMS_IN_CACHE: ${CACHE_MAX_ITEMS_IN_CACHE}
+      SERVE_LOCAL_SSL: ${SERVE_LOCAL_SSL}
+      FRONTEND_COOKIE: ${FRONTEND_COOKIE}
+      SESSION_SECRET: ${SESSION_SECRET}
+      OAUTH2_CLIENT_PROVIDER_OIDC_ISSUER: ${OAUTH2_CLIENT_PROVIDER_OIDC_ISSUER}
+      OAUTH2_CLIENT_REGISTRATION_LOGIN_CLIENT_ID: ${OAUTH2_CLIENT_REGISTRATION_LOGIN_CLIENT_ID}
+      OAUTH2_CLIENT_REGISTRATION_LOGIN_CLIENT_SECRET: ${OAUTH2_CLIENT_REGISTRATION_LOGIN_CLIENT_SECRET}
+      OAUTH2_CLIENT_REGISTRATION_LOGIN_SCOPE: ${OAUTH2_CLIENT_REGISTRATION_LOGIN_SCOPE}
+      OAUTH2_CLIENT_REGISTRATION_LOGIN_REDIRECT_URI: ${OAUTH2_CLIENT_REGISTRATION_LOGIN_REDIRECT_URI}
+      OAUTH2_CLIENT_REGISTRATION_LOGIN_POST_LOGOUT_REDIRECT_URI: ${OAUTH2_CLIENT_REGISTRATION_LOGIN_POST_LOGOUT_REDIRECT_URI}
+      JWT_ACCESS_TOKEN_SECRET: ${JWT_ACCESS_TOKEN_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRATION_TIME: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME}
+      JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET}
+      JWT_REFRESH_TOKEN_EXPIRATION_TIME: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
+      NGINX_PORT: ${NGINX_PORT}
+    restart: "on-failure"
+
+  equmedia-api-rabbitmq:
+    container_name: equmedia-api-rabbitmq
+    image: rabbitmq:3.8.8-management-alpine
+    hostname: equmedia-api-rabbitmq
+    ports:
+        - ${RABBITMQ_FIRST_HOST_PORT}:5672
+        - ${RABBITMQ_SECOND_HOST_PORT}:15672
+    volumes:
+        - ./data/rabbitmq:/var/lib/rabbitmq/mnesia/rabbit@app-rabbitmq:cached
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+      RABBITMQ_NODENAME: "rabbitmq"
+    networks:
+      - "backend"
+
+  equmedia-api-redis:
+    container_name: equmedia-api-redis
+    image: redis:5-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - $PWD/api-gateway/equmedia-api/src/cache/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_REPLICATION_MODE=master
+    ports: 
+      - ${REDIS_PORT}:6379
+    networks: 
+      - "backend"
+
+  equmedia-api-nginx:
+    image: nginx:alpine
+    container_name: equmedia-api-nginx
+    ports:
+        - 80:80
+        - 443:443
+    volumes:
+        - ./api-gateway/equmedia-api/nginx/prod:/etc/nginx/conf.d/
+        - ./api-gateway/equmedia-api/src/security/secrets/public-cert.crt:/etc/ssl/public-cert.crt
+        - ./api-gateway/equmedia-api/src/security/secrets/private-key.key:/etc/ssl/private-key.key
+    depends_on: 
+      - "equmedia-api"
+    ulimits:
+      nproc: 65535
+    networks:
+      - "backend"
+
+  equmedia-auth:
+    image: "equmedia-auth:dev"
+    container_name: "equmedia-auth"
+    build:
+      context: "./microservices/equmedia-auth-service"
+    networks:
+      - "backend"
+      - "authdomain"
+    depends_on:
+      - "equmedia-auth-db"
+      - "equmedia-api-rabbitmq"
+    links: 
+      - "equmedia-api-rabbitmq"
+    environment: 
+      POSTGRES_HOST: "equmedia-auth-db"
+      POSTGRES_PORT: "5432"
+      POSTGRES_USERNAME: ${AUTH_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${AUTH_POSTGRES_DATABASE}
+      RABBITMQ_NODENAME: "equmedia-api-rabbitmq"
+      RABBITMQ_FIRST_HOST_PORT: "5672"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+      EMAIL_SECRET: ${EMAIL_SECRET}
+      HASH_PEPPER: ${HASH_PEPPER}
+    restart: "on-failure"
+
+  equmedia-auth-db:
+    image: postgres:13-alpine
+    container_name: "equmedia-auth-db"
+    networks:
+      - "authdomain"
+    expose:
+      - "5432"
+    volumes:
+      - authdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${AUTH_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_POSTGRES_DATABASE}
+    restart: "on-failure"
+
+  equmedia-mail:
+    image: "equmedia-mail:dev"
+    container_name: "equmedia-mail"
+    build:
+      context: "./microservices/equmedia-mail-service"
+    networks:
+      - "backend"
+      - "maildomain"
+    depends_on:
+      - "equmedia-mail-db"
+      - "equmedia-api-rabbitmq"
+    links: 
+      - "equmedia-api-rabbitmq"
+    environment: 
+      POSTGRES_HOST: "equmedia-mail-db"
+      POSTGRES_PORT: "5432"
+      POSTGRES_USERNAME: ${MAIL_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${MAIL_POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${MAIL_POSTGRES_DATABASE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+      RABBITMQ_FIRST_HOST_PORT: "5672"
+      RABBITMQ_NODENAME: "equmedia-api-rabbitmq"
+      SENDGRID_KEY: ${SENDGRID_KEY}
+    restart: "on-failure"
+
+  equmedia-mail-db:
+    image: postgres:13-alpine
+    container_name: "equmedia-payment-db"
+    networks:
+      - "paymentdomain"
+    expose:
+      - "5432"
+    volumes:
+      - paymentdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${PAYMENT_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PAYMENT_POSTGRES_DATABASE}
+    restart: "on-failure"
+
+networks:
+  backend:
+  authdomain:
+  maildomain:
+
+volumes:
+  authdata:
+  maildata:

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (HEAD)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: equmedia-api-redis
+  name: equmedia-api-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: equmedia-api-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (HEAD)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend: "true"
+        io.kompose.service: equmedia-api-redis
+    spec:
+      containers:
+        - args:
+            - redis-server
+            - --requirepass
+          env:
+            - name: REDIS_REPLICATION_MODE
+              value: master
+          image: redis:5-alpine
+          name: equmedia-api-redis
+          ports:
+            - containerPort: 6379
+          resources: {}
+          volumeMounts:
+            - mountPath: /usr/local/etc/redis/redis.conf
+              name: equmedia-api-redis-claim0
+      restartPolicy: Always
+      volumes:
+        - name: equmedia-api-redis-claim0
+          persistentVolumeClaim:
+            claimName: equmedia-api-redis-claim0
+status: {}
