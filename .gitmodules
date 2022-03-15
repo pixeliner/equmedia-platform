@@ -1,12 +1,9 @@
 [submodule "api-gateway/equmedia-api"]
 	path = api-gateway/equmedia-api
-	url = git@github.com:pixeliner/equmedia-api.git
+	url = https://github.com/pixeliner/equmedia-api
 [submodule "microservices/equmedia-auth-service"]
 	path = microservices/equmedia-auth-service
-	url = git@github.com:pixeliner/equmedia-auth-service.git
+	url = https://github.com/pixeliner/equmedia-auth-service
 [submodule "microservices/equmedia-mail-service"]
 	path = microservices/equmedia-mail-service
-	url = git@github.com:pixeliner/equmedia-mail-service.git
-[submodule "microservices/equmedia-payment-service"]
-	path = microservices/equmedia-payment-service
-	url = git@github.com:pixeliner/equmedia-payment-service.git
+	url = https://github.com/pixeliner/equmedia-mail-service
