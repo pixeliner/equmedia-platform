@@ -6,6 +6,7 @@ services:
     container_name: "equmedia-api"
     build:
       context: "./api-gateway/equmedia-api"
+      dockerfile: Dockerfile
     networks:
       - "backend"
     ports:
@@ -98,6 +99,7 @@ services:
     container_name: "equmedia-auth"
     build:
       context: "./microservices/equmedia-auth-service"
+      dockerfile: Dockerfile
     networks:
       - "backend"
       - "authdomain"
@@ -143,6 +145,7 @@ services:
     container_name: "equmedia-mail"
     build:
       context: "./microservices/equmedia-mail-service"
+      dockerfile: Dockerfile
     networks:
       - "backend"
       - "maildomain"
@@ -162,18 +165,18 @@ services:
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
       RABBITMQ_FIRST_HOST_PORT: "5672"
       RABBITMQ_NODENAME: "equmedia-api-rabbitmq"
-      SENDGRID_KEY: ${SENDGRID_KEY}
+      MOLLIE_KEY: ${MOLLIE_KEY}
     restart: "on-failure"
 
   equmedia-mail-db:
     image: postgres:13-alpine
-    container_name: "equmedia-payment-db"
+    container_name: "equmedia-mail-db"
     networks:
-      - "paymentdomain"
+      - "maildomain"
     expose:
       - "5432"
     volumes:
-      - paymentdata:/var/lib/postgresql/data
+      - maildata:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${PAYMENT_POSTGRES_USERNAME}
       POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
