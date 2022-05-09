@@ -7,6 +7,12 @@
 [submodule "microservices/equmedia-mail-service"]
 	path = microservices/equmedia-mail-service
 	url = https://github.com/pixeliner/equmedia-mail-service
+[submodule "microservices/equmedia-customer-service"]
+	path = microservices/equmedia-customer-service
+	url = https://github.com/pixeliner/equmedia-customer-service
 [submodule "proxy/equmedia-proxy"]
 	path = proxy/equmedia-proxy
 	url = https://github.com/pixeliner/equmedia-proxy
+[submodule "microservices/equmedia-payment-service"]
+	path = microservices/equmedia-payment-service
+	url = https://github.com/pixeliner/equmedia-payment-service
