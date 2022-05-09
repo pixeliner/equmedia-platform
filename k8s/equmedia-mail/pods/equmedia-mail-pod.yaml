@@ -27,7 +27,8 @@ spec:
           value: "5672"
         - name: RABBITMQ_NODENAME
           value: equmedia-api-rabbitmq
-        - name: SENDGRID_KEY
+        - name: MJ_APIKEY_PUBLIC
+        - name: MJ_APIKEY_SECRET
       image: equmedia-mail:dev
       name: equmedia-mail
       resources: {}

@@ -6,6 +6,7 @@ services:
     container_name: "equmedia-api"
     build:
       context: "./api-gateway/equmedia-api"
+      dockerfile: Dockerfile
     networks:
       - "backend"
     ports:
@@ -43,6 +44,10 @@ services:
       JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET}
       JWT_REFRESH_TOKEN_EXPIRATION_TIME: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
       NGINX_PORT: ${NGINX_PORT}
+      BULL_PREFIX: ${BULL_PREFIX}
+      BULL_MAX_JOBS: ${BULL_MAX_JOBS}
+      BULL_MAX_DURATION_FOR_JOB_IN_MILISECONDS: ${BULL_MAX_DURATION_FOR_JOB_IN_MILISECONDS}
+      QUEUE_NAME: ${QUEUE_NAME}
     restart: "on-failure"
 
   equmedia-api-rabbitmq:
@@ -84,8 +89,8 @@ services:
         - 443:443
     volumes:
         - ./api-gateway/equmedia-api/nginx/prod:/etc/nginx/conf.d/
-        - ./api-gateway/equmedia-api/src/security/secrets/public-cert.crt:/etc/ssl/public-cert.crt
-        - ./api-gateway/equmedia-api/src/security/secrets/private-key.key:/etc/ssl/private-key.key
+        - ./api-gateway/equmedia-api/config/public-cert.crt:/etc/ssl/public-cert.crt
+        - ./api-gateway/equmedia-api/config/private-key.key:/etc/ssl/private-key.key
     depends_on: 
       - "equmedia-api"
     ulimits:
@@ -98,6 +103,7 @@ services:
     container_name: "equmedia-auth"
     build:
       context: "./microservices/equmedia-auth-service"
+      dockerfile: Dockerfile
     networks:
       - "backend"
       - "authdomain"
@@ -143,6 +149,7 @@ services:
     container_name: "equmedia-mail"
     build:
       context: "./microservices/equmedia-mail-service"
+      dockerfile: Dockerfile
     networks:
       - "backend"
       - "maildomain"
@@ -162,22 +169,23 @@ services:
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
       RABBITMQ_FIRST_HOST_PORT: "5672"
       RABBITMQ_NODENAME: "equmedia-api-rabbitmq"
-      SENDGRID_KEY: ${SENDGRID_KEY}
+      MJ_APIKEY_PUBLIC: ${MJ_APIKEY_PUBLIC}
+      MJ_APIKEY_SECRET: ${MJ_APIKEY_SECRET}
     restart: "on-failure"
 
   equmedia-mail-db:
     image: postgres:13-alpine
-    container_name: "equmedia-payment-db"
+    container_name: "equmedia-mail-db"
     networks:
-      - "paymentdomain"
+      - "maildomain"
     expose:
       - "5432"
     volumes:
-      - paymentdata:/var/lib/postgresql/data
+      - maildata:/var/lib/postgresql/data
     environment:
-      POSTGRES_USER: ${PAYMENT_POSTGRES_USERNAME}
-      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PAYMENT_POSTGRES_DATABASE}
+      POSTGRES_USER: ${MAIL_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${MAIL_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MAIL_POSTGRES_DATABASE}
     restart: "on-failure"
 
 networks:
